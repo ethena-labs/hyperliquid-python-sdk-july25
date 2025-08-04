@@ -13,16 +13,18 @@ env_path = find_dotenv()
 load_dotenv(env_path)
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 
-deployer = Account.from_key(PRIVATE_KEY)
-deployer_address = deployer.address
-print(deployer_address)
+# deployer = Account.from_key(PRIVATE_KEY)
+# deployer_address = deployer.address
+# print(deployer_address)
+deployer_address = "0x0d20d44Fbd48752241a2b18979dF2424e8a5F022"
+#Note config.json also needs to be setup with deployer address pkey, in addition to having in env.
 
 # Set to True to enable freeze functionality for the deployed token
 # See step 2-a below for more details on freezing.
 ENABLE_FREEZE_PRIVILEGE = True
 # Set to True to set the deployer trading fee share
 # See step 6 below for more details on setting the deployer trading fee share.
-SET_DEPLOYER_TRADING_FEE_SHARE = False
+SET_DEPLOYER_TRADING_FEE_SHARE = False # Defaults to 100%, no need to set
 DUMMY_USER = "0x0000000000000000000000000000000000000001"
 
 
@@ -30,11 +32,12 @@ def setup():
     pass
 
 address, info, exchange = example_utils.setup(constants.TESTNET_API_URL, skip_ws=True)
-initial_supply = 100_000_000_000
+initial_supply = 100_000_000_000 #100b
 wei_decimals = 8
 sz_decimals = 2
 initial_supply_wei = initial_supply * 10 ** wei_decimals
-
+max_gas = 260000000000 #Amount of HYPE to bid x 10**8
+token = 1388 # Replace with value from step 1
 def step1():
 
     # Step 1: Registering the Token
@@ -42,7 +45,7 @@ def step1():
     # Takes part in the spot deploy auction and if successful, registers token "TEST0"
     # with sz_decimals 2 and wei_decimals 8.
     # The max gas is 10,000 HYPE and represents the max amount to be paid for the spot deploy auction.
-    register_token_result = exchange.spot_deploy_register_token("THUSDE", sz_decimals, wei_decimals, initial_supply, "Test token THUSDE")
+    register_token_result = exchange.spot_deploy_register_token("THUSDE", sz_decimals, wei_decimals, max_gas, "Test token THUSDE")
     print(register_token_result)
     # If registration is successful, a token index will be returned. This token index is required for
     # later steps in the spot deploy process.
@@ -53,14 +56,11 @@ def step1():
 
 
 def step2():
-    token = "" #grab from step 1 later
     # Step 2: User Genesis
-
-
     user_genesis_result = exchange.spot_deploy_user_genesis(
         token,
         [
-            (deployer_address, initial_supply_wei),
+            (deployer_address.lower(), str(initial_supply_wei)),
         ],
         [],
     )
@@ -82,15 +82,12 @@ def step2():
 
 #
 def step3():
-    token = ""
     # Step 3: Genesis
-
     genesis_result = exchange.spot_deploy_genesis(token, str(initial_supply_wei), no_hyperliquidity=True)
     print(genesis_result)
 #
 
 def step4():
-    token = ""
     # Step 4: Register Spot
     #
     # Register the spot pair (TEST0/USDC) given base and quote token indices. 0 represents USDC.
@@ -105,8 +102,7 @@ def step4():
         return
 
 def step5():
-    spot = ""
-    token = ""
+    spot = 1258 #Change to value from step 4
     # Step 5: Register Hyperliquidity
     #
     # Registers hyperliquidity for the spot pair. In this example, hyperliquidity is registered
@@ -117,15 +113,14 @@ def step5():
     register_hyperliquidity_result = exchange.spot_deploy_register_hyperliquidity(spot, 2.0, 4.0, 0, None)
     print(register_hyperliquidity_result)
 
-    if SET_DEPLOYER_TRADING_FEE_SHARE:
+    # if SET_DEPLOYER_TRADING_FEE_SHARE:
         # Step 6
         #
         # Note that the deployer trading fee share cannot increase.
         # The default is already 100% and the smallest increment is 0.001%.
-        set_deployer_trading_fee_share_result = exchange.spot_deploy_set_deployer_trading_fee_share(token, "100%")
-        print(set_deployer_trading_fee_share_result)
+        # set_deployer_trading_fee_share_result = exchange.spot_deploy_set_deployer_trading_fee_share(token, "100%")
+        # print(set_deployer_trading_fee_share_result)
 
 
 if __name__ == "__main__":
-
-    pass
+    step5()
